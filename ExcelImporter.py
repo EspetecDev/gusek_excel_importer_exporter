@@ -40,7 +40,9 @@ class Order:
 
 
 
-# Utility functions that make our life easier
+## CONFIGURATION DATA ##
+STARTING_PROVIDER_COLUMN_NAME = 'Proveïdor n'
+STARTING_ORDER_COLUMN_NAME = 'Numero de comanda'
 
 # Get the row and column index for a given cell content
 def GetRowColFromTableName(sheet, content):
@@ -51,84 +53,47 @@ def GetRowColFromTableName(sheet, content):
 				# reading the content
 				return rowidx+1, colidx 
 
+def GetData():
+	# Aqui simplement definim un Array, que es una llista de coses, en aquest cas, de proveidors i una altra de comandes
+	providers = []
+	orders = []
 
+	# Agafem el name de l'excel que volem llegir
+	filename = 'input_data.xlsx'#sys.argv[1]
+	print('Parsing file ' + filename + '...')
+	# El llegim i definim la fulla
+	file = openpyxl.load_workbook(filename)
+	sheet = file.active
 
-# Aqui posem els indexos de cada categoria, per saber on hem de llegir de l'excel
-# Commanda
-##########################
-orderNumberCol     	  = 2
-meatKgCol 	       	  = 3
-fatPercentageCol      = 4
-OrderDayCol			  = 5
+	# Lets get where the providers and orders info starts
+	providersRow, providersCol = GetRowColFromTableName(sheet, STARTING_PROVIDER_COLUMN_NAME)
+	ordersRow, ordersCol = GetRowColFromTableName(sheet, STARTING_ORDER_COLUMN_NAME)
 
-# Proveidor
-###########################
-ProveidorCol   	   	  = 7
-QuantitatMinimaCol 	  = 8
-QuantitatMinimaCol 	  = 9
-priceCol			   	  = 10
-fatPercentageProveidorCol = 11
+	# Parse providers data
+	for rowidx in list(range(providersRow, sheet.max_row + 1)):
+		# Creem un objecte proveidor on guardarem les dades
+		tempProvider = Provider()
+		tempProvider.name = sheet.cell(row = rowidx, column=providersCol).value
+		tempProvider.qtMin = sheet.cell(row = rowidx, column=providersCol+1).value
+		tempProvider.qtMax = sheet.cell(row = rowidx, column=providersCol+2).value
+		tempProvider.price = sheet.cell(row = rowidx, column=providersCol+3).value
+		tempProvider.fatPercentage = sheet.cell(row = rowidx, column=providersCol+4).value
+		# Check if the new provider was created successfully
+		if tempProvider.name != None:
+			providers.append(tempProvider)
 
-# Aqui simplement definim un Array, que es una llista de coses, en aquest cas, de proveidors i una altra de comandes
-proveidors = []
-commandes = []
-
-
-# 1. Llegim l'excel i definim les dades
-
-## CONFIGURATION DATA ##
-STARTING_PROVIDER_COLUMN_NAME = 'Proveïdor n'
-STARTING_ORDER_COLUMN_NAME = 'Numero de comanda'
-
-# Agafem el name de l'excel que volem llegir
-filename = 'input_data.xlsx'#sys.argv[1]
-print('Parsing file ' + filename + '...')
-# El llegim i definim la fulla
-file = openpyxl.load_workbook(filename)
-sheet = file.active
-
-# 2. Ara agafem les dades
-# Lets get where the providers and orders info starts
-providersRow, providersCol = GetRowColFromTableName(sheet, STARTING_PROVIDER_COLUMN_NAME)
-ordersRow, ordersCol = GetRowColFromTableName(sheet, STARTING_ORDER_COLUMN_NAME)
-
-startParsing = False
-for rowidx in list(range(providersRow, sheet.max_row + 1)):
-	# Creem un objecte proveidor on guardarem les dades
-	tempProvider = Provider()
-	tempProvider.name = sheet.cell(row = rowidx, column=providersCol).value
-	tempProvider.qtMin = sheet.cell(row = rowidx, column=providersCol+1).value
-	tempProvider.qtMax = sheet.cell(row = rowidx, column=providersCol+2).value
-	tempProvider.price = sheet.cell(row = rowidx, column=providersCol+3).value
-	tempProvider.fatPercentage = sheet.cell(row = rowidx, column=providersCol+4).value
-	# Check if the new provider was created successfully
-	if tempProvider.name != None:
-		proveidors.append(tempProvider)
-
-startParsing = False
-# I ara igual amb les commandes
-for rowidx in list(range(sheet.max_row + 1)):
-	# Comencem a partir de la 4a fila que es on comencen les dades
-	if rowidx > 3: 
+	# Parse orders data
+	for rowidx in list(range(ordersRow, sheet.max_row + 1)):
+		# Comencem a partir de la 4a fila que es on comencen les dades
 		tempCommanda = Order()
-		tempCommanda.orderNumber = sheet.cell(row = rowidx, column=orderNumberCol).value
-		tempCommanda.meatKg = sheet.cell(row = rowidx, column=meatKgCol).value
-		tempCommanda.fatPercentage = sheet.cell(row = rowidx, column=fatPercentageCol).value
-		tempCommanda.day = sheet.cell(row = rowidx, column=OrderDayCol).value
+		tempCommanda.orderNumber = sheet.cell(row = rowidx, column=ordersCol).value
+		tempCommanda.meatKg = sheet.cell(row = rowidx, column=ordersCol+1).value
+		tempCommanda.fatPercentage = sheet.cell(row = rowidx, column=ordersCol+2).value
+		tempCommanda.day = sheet.cell(row = rowidx, column=ordersCol+3).value
 		if tempCommanda.orderNumber != None:
-			print('Nova commanda: ' + tempCommanda.orderNumber)
-			commandes.append(tempCommanda)
+			orders.append(tempCommanda)
 
-
-# Imprimim per pantalla els proveidors que hem llegit
-for p in proveidors:
-	p.toString()
-
-# I el mateix per les commandes
-for c in commandes:
-	c.toString()
-
-# 3. Write data to xlsx
+	return providers, orders
 
 
 
