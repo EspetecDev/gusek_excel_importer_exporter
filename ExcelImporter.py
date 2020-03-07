@@ -3,7 +3,7 @@ import openpyxl
 
 # Una class ens permet definir un "Objecte", en aquest cas un proveidor
 # els objectes ens deixen guardar les dade per cada proviedor
-class Provider:
+class Product:
 	def __init__(self):
 		self.name = ''
 		self.qtMin = 0.0
@@ -13,7 +13,7 @@ class Provider:
 
 	def toString(self):
 		print('**********************************')
-		print('Provider product data: ')
+		print('Product product data: ')
 		print('Name: ' + self.name)
 		print('Minimum quantity: ' + str(self.qtMin))
 		print('Maximum quantity: ' + str(self.qtMax))
@@ -55,7 +55,7 @@ def GetRowColFromTableName(sheet, content):
 
 def GetData():
 	# Aqui simplement definim un Array, que es una llista de coses, en aquest cas, de proveidors i una altra de comandes
-	providers = []
+	products = []
 	orders = []
 
 	# Agafem el name de l'excel que volem llegir
@@ -65,22 +65,22 @@ def GetData():
 	file = openpyxl.load_workbook(filename)
 	sheet = file.active
 
-	# Lets get where the providers and orders info starts
-	providersRow, providersCol = GetRowColFromTableName(sheet, STARTING_PROVIDER_COLUMN_NAME)
+	# Lets get where the products and orders info starts
+	productsRow, productsCol = GetRowColFromTableName(sheet, STARTING_PROVIDER_COLUMN_NAME)
 	ordersRow, ordersCol = GetRowColFromTableName(sheet, STARTING_ORDER_COLUMN_NAME)
 
-	# Parse providers data
-	for rowidx in list(range(providersRow, sheet.max_row + 1)):
+	# Parse products data
+	for rowidx in list(range(productsRow, sheet.max_row + 1)):
 		# Creem un objecte proveidor on guardarem les dades
-		tempProvider = Provider()
-		tempProvider.name = sheet.cell(row = rowidx, column=providersCol).value
-		tempProvider.qtMin = sheet.cell(row = rowidx, column=providersCol+1).value
-		tempProvider.qtMax = sheet.cell(row = rowidx, column=providersCol+2).value
-		tempProvider.price = sheet.cell(row = rowidx, column=providersCol+3).value
-		tempProvider.fatPercentage = sheet.cell(row = rowidx, column=providersCol+4).value
-		# Check if the new provider was created successfully
-		if tempProvider.name != None:
-			providers.append(tempProvider)
+		tempProduct = Product()
+		tempProduct.name = sheet.cell(row = rowidx, column=productsCol).value
+		tempProduct.qtMin = sheet.cell(row = rowidx, column=productsCol+1).value
+		tempProduct.qtMax = sheet.cell(row = rowidx, column=productsCol+2).value
+		tempProduct.price = sheet.cell(row = rowidx, column=productsCol+3).value
+		tempProduct.fatPercentage = sheet.cell(row = rowidx, column=productsCol+4).value
+		# Check if the new product was created successfully
+		if tempProduct.name != None:
+			products.append(tempProduct)
 
 	# Parse orders data
 	for rowidx in list(range(ordersRow, sheet.max_row + 1)):
@@ -93,7 +93,7 @@ def GetData():
 		if tempCommanda.orderNumber != None:
 			orders.append(tempCommanda)
 
-	return providers, orders
+	return products, orders
 
 
 
