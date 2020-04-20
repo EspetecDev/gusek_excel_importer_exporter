@@ -1,0 +1,4 @@
+s -> proveidor
+b -> tipus producte (producte a)
+
+
