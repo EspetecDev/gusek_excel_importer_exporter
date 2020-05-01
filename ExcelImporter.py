@@ -1,4 +1,5 @@
 import openpyxl
+from openpyxl.styles import Font
 
 # Una class ens permet definir un "Objecte", en aquest cas un proveidor
 # els objectes ens deixen guardar les dade per cada proviedor
@@ -28,6 +29,7 @@ class Product:
 class Order:
     def __init__(self):
         self.orderNumber = ''
+        self.productName = ''
         self.meatKg = 0
         self.leanPercentage = 0.0
         self.day = ' '
@@ -102,10 +104,107 @@ def GetData(filepath):
         # Comencem a partir de la 4a fila que es on comencen les dades
         tempCommanda = Order()
         tempCommanda.orderNumber = sheet.cell(row = rowidx, column=ordersCol).value
-        tempCommanda.meatKg = sheet.cell(row = rowidx, column=ordersCol+1).value
-        tempCommanda.leanPercentage = sheet.cell(row = rowidx, column=ordersCol+2).value
-        tempCommanda.day = sheet.cell(row = rowidx, column=ordersCol+3).value
+        tempCommanda.productName = sheet.cell(row = rowidx, column=ordersCol+1).value
+        tempCommanda.meatKg = sheet.cell(row = rowidx, column=ordersCol+2).value
+        tempCommanda.leanPercentage = sheet.cell(row = rowidx, column=ordersCol+3).value
+        tempCommanda.day = sheet.cell(row = rowidx, column=ordersCol+4).value
         if tempCommanda.orderNumber != None:
             orders.append(tempCommanda)
 
     return products, orders
+
+def GetArgumentsFromName(name):
+    result = {}
+    result["varName"] = name.split("[")[0]
+    result["varSupp"] = name.split("[")[1].split(",")[0]
+    result["varPID"] = name.split("[")[1].split(",")[1]
+    result["varDay"] = name.split("[")[1].split(",")[2].replace("]","")
+
+    return result
+
+def GetProductNameFromID(productList, productID):
+    for p in productList:
+        if p.productID == productID:
+            return p.name
+
+def ExportDataToExcel(filename, products, suppliers, days, modelData ):
+    
+    print('Exporting data to ' + filename)
+    # 1. Load excel file and the sheet we will work on
+    file = openpyxl.load_workbook(filename)
+    #sheet = file["Dad_Sort"]
+    sheet = file.create_sheet(title="Dad_Sort2")
+    sheet.cell(row=13, column=1).value = "DILLUNS"
+
+
+    Amount = []
+    Use = []
+    Buy = []
+    Stock = []
+
+    # Distribute data by model variable
+    for dataValue in modelData:
+        if dataValue.X > 0:
+            if dataValue.Varname.startswith("Amount"):
+                Amount.append(dataValue)
+            elif dataValue.Varname.startswith("Use"):
+                Use.append(dataValue)
+            elif dataValue.Varname.startswith("Buy"):
+                Buy.append(dataValue)
+            elif dataValue.Varname.startswith("Stock"):
+                Stock.append(dataValue)
+                
+
+    # 2. We will iterate over every day, every supplier and every 
+    currentDay = 0
+    for day in days:
+        # Get the index where the name of the day is written
+        dayCellIndex = GetRowColFromTableName(sheet, day.upper())
+
+        # Get the starting index to write data
+        # Starting stock
+        startRow = dayCellIndex[0] + 1
+        startColumn = dayCellIndex[1] + 1
+        # Get starting coordinates to 
+        suppliersStartRow = dayCellIndex[0]
+        suppliersStartColumn = startColumn + 1
+
+        # Write default table values
+        sheet.cell(row=dayCellIndex[0], column=(dayCellIndex[1]+1)).value = "Estoc Inicial"
+        sheet.cell(row=dayCellIndex[0], column=(dayCellIndex[1]+1)).font = Font(bold=True)
+
+        sheet.cell(row=startRow - 1, column=startColumn).value = "ID"
+        sheet.cell(row=startRow - 1, column=startColumn+1).value = "NOM"
+
+        # Now we are writing the values for every provider
+        # for amountValue in Amount:
+        supplierList = []
+        for amountVar in Amount:
+            varInfo = GetArgumentsFromName(amountVar.varName)
+
+            # If the supplier does not have a column yet, write it
+            if varInfo["varSupp"] not in supplierList:
+                supplierList.append(varInfo["varSupp"])
+                sheet.cell(row = suppliersStartRow, column= suppliersStartColumn+len(supplierList)).value = varInfo["varSupp"]
+                print("Day: " + day + " - New supplier: " + varInfo["varSupp"] + " on coord: " + str(suppliersStartRow) + "," + str(suppliersStartColumn+len(supplierList)))
+
+            # Write the product info
+            if amountVar.X is not 0:
+                sheet.cell(row = startRow, column=startColumn).value = varInfo["varPID"]
+                sheet.cell(row = startRow, column=startColumn+1).value = GetProductNameFromID(products, varInfo["varPID"])
+                sheet.cell(row = startRow, column=suppliersStartColumn+supplierList.index(varInfo["varSupp"])+1).value = amountVar.X
+                
+                startRow = startRow + 1
+
+        # Reset the column index 
+        currentDay = currentDay + 1
+        if currentDay == len(days):
+            currentDay = len(days) - 1
+        sheet.cell(row = suppliersStartRow - 1, column=suppliersStartColumn+len(supplierList)+1).value = days[currentDay].upper()
+        print("writing day: " + days[currentDay].upper() + " on coord: " + str(suppliersStartRow - 1) +" "+str(suppliersStartColumn+len(supplierList)))
+        startColumn = dayCellIndex[1] + 1
+
+    file.save(filename)
+    print('Exporting done')
+
+    

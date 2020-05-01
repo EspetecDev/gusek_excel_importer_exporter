@@ -1,9 +1,10 @@
 import sys
 from gurobipy import *
 import ExcelImporter as EI
-import ExcelExporter as EE
 
-excelData = EI.GetData('tfg_oriol.xlsx')
+excelFilename = "tfg_oriol.xlsx"
+
+excelData = EI.GetData(excelFilename)
 products = excelData[0]
 orders = excelData[1]
 
@@ -144,9 +145,14 @@ model.optimize()
             
 
 
-
 for v in model.getVars():
   if v.X != 0:
       print("%s %f" % (v.Varname, v.X))
 
-model.write('casademont.lp')
+a = model.getVarByName("Amount")
+b = model.getVars()
+
+EI.ExportDataToExcel(excelFilename, products, suppliers, dies, model.getVars())
+
+
+# model.write('casademont.lp')
